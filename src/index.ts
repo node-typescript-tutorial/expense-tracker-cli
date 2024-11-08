@@ -1,14 +1,19 @@
 import { Command } from "commander";
-import { readFile, readFileSync } from "fs";
+import { readCSV } from "./csv";
+import { Item, itemModel } from "./item";
 
-interface Item {
-  id: string;
-  description: string;
-  amount: number;
-  createdAt: Date;
-}
+const csvPath = "./data/data.csv";
 
-const data = readFileSync("./data/data.csv");
+let csvData: Item[] = [];
+
+readCSV<Item>(csvPath, itemModel)
+  .then((val) => {
+    csvData = val;
+  })
+  .catch((e) => {
+    console.log(`error when read data from CSV file ${csvPath}: `, e);
+    return;
+  });
 
 const program = new Command();
 program
