@@ -8,6 +8,8 @@ interface ModelProp {
 
 interface CSVProp {
   header: string;
-  type: "number" | "string" | "date";
+  type: ColType;
   format?: string;
 }
+
+export type ColType = "number" | "string" | "date";
