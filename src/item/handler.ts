@@ -1,35 +1,43 @@
-import { addLine } from "src/csv";
-import { Item } from "src/item";
+import { Item } from "src/item/item";
 import { Model } from "src/model";
-import { IItemRepository } from "./reository";
+import { IItemService } from "./service";
 
-export class Handler {
-  private repository: IItemRepository;
+export class ItemHandler {
+  private service: IItemService;
   private model: Model<Item>;
-  constructor(repository: IItemRepository, model: Model<Item>){
-    this.repository = repository;
+  constructor(service: IItemService, model: Model<Item>) {
+    this.service = service;
     this.model = model;
-
+    this.add = this.add.bind(this);
   }
-}
-export const addHandler = (opts: {description: string, amount: string}, command: any): void => {
-  console.log("options:", opts, command);
 
-  // Parse and validate value 
-  if (opts.description == undefined && opts.amount == undefined) {
-    console.log("Error: description and amount are required");
-  } else {
-    const description = opts.description;
-    const amount = parseFloat(opts.amount);
-    if (isNaN(amount)) {
-      console.log("Error: Amount must be a number.");
+
+  add = (
+    opts: { description: string; amount: string },
+    command: any
+  ): void => {
+    console.log("options:", opts, command);
+  
+    // Parse and validate value
+    if (opts.description == undefined && opts.amount == undefined) {
+      console.log("Error: description and amount are required");
+      return;
     } else {
-      console.log(`Description: ${description}`);
-      console.log(`Amount: ${amount}`);
+      const description = opts.description;
+      const amount = parseFloat(opts.amount);
+      if (isNaN(amount)) {
+        console.log("Error: Amount must be a number.");
+        return;
+      } else {
+        console.log(`Description: ${description}`);
+        console.log(`Amount: ${amount}`);
+        this.service.add(description, amount)
+        // handle logic
+
+        ///////////////////////
+      }
     }
-
-  }
-
-
-};
-
+  };
+  
+}
+ 
