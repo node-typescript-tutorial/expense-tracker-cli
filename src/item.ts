@@ -1,37 +1,37 @@
 import { Model } from "./model";
 
 export interface Item {
-    id: string;
-    description: string;
-    amount: number;
-    createdAt: Date;
-  }
-  
-  export const itemModel: Model<Item> = {
-    id: {
-      csv: {
-        header: "ID",
-        type: "string",
-      },
+  id: string;
+  description: string;
+  amount: number;
+  createdAt: Date;
+}
+
+export const itemModel: Model<Item> = {
+  id: {
+    csv: {
+      header: "ID",
     },
-    createdAt: {
-      csv: {
-        header: "Date",
-        type: "date",
-        format: "YYYY-MM-DD",
-      },
+    type: "string",
+  },
+  createdAt: {
+    type: "date",
+    format: "YYYY-MM-DD",
+
+    csv: {
+      header: "Date",
     },
-    description: {
-      csv: {
-        header: "Description",
-        type: "string",
-      },
+  },
+  description: {
+    csv: {
+      header: "Description",
     },
-    amount: {
-      csv: {
-        header: "Amount",
-        type: "string",
-      },
+    type: "string",
+  },
+  amount: {
+    csv: {
+      header: "Amount",
     },
-  };
-  
+    type: "string",
+  },
+};

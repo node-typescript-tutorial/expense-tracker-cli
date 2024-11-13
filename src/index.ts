@@ -2,6 +2,8 @@ import { Command } from "commander";
 import { readCSV } from "./csv";
 import { Item, itemModel } from "./item";
 import { createInterface } from "readline";
+import { addCommand } from "./item/command";
+import { parseCommandLine } from "./helper/parse";
 
 const setUp = async () => {
   let csvData: Item[] = [];
@@ -11,23 +13,29 @@ const setUp = async () => {
     output: process.stdout,
   });
 
-  function promptForCommand(program: Command, question: string = "") {
+  function promptForCommand(program: Command, question: string = "> ") {
     rl.question(question, (answer) => {
-      if (answer === "exit") {
+      if (answer.trim() === "exit") {
         rl.close();
-        return;
+        process.exit(0);
       }
 
       // parse the input command
-      const args = answer.split(" ");
       try {
-        program.parse([process.argv[0], process.argv[1], ...args]);
+        program.parse([
+          process.argv[0],
+          process.argv[1],
+          ...parseCommandLine(answer),
+        ]);
       } catch (error) {
-        console.log("error: ", error);
+        console.log("Error: ", error);
         promptForCommand(program);
       }
     });
   }
+  const program = setUpCommand(() => {
+    promptForCommand(program);
+  });
 
   try {
     csvData = await readCSV<Item>(csvPath, itemModel);
@@ -36,27 +44,30 @@ const setUp = async () => {
     console.log(`error when read data from CSV file ${csvPath}: `, e);
     throw e;
   }
-  const program = new Command();
-  program
-    .name("expense tracker cli")
-    .description("a cli tool for track expense")
-    .version("1.0.0");
-
-  program
-    .command("expense-tracker add")
-    .requiredOption("--description <desc>", "description for item")
-    .requiredOption("--amount <amt>", "amount for item")
-    .action((options: { desc: string; amount: number }) => {
-      promptForCommand(program);
-    });
-
-  program.on("command:*", (operands) => {
-    console.log(`Unknown command: ${operands.join(" ")}`);
-    promptForCommand(program);
-  });
 
   // run
   promptForCommand(program);
 };
 
 setUp();
+
+function setUpCommand(callbackCmdExecuted?: () => void): Command {
+  const program = new Command();
+  program.on("command:*", (operands) => {
+    console.log(`Unknown command: ${operands.join(" ")}`);
+    callbackCmdExecuted && callbackCmdExecuted();
+  });
+  program
+    .name("expense tracker cli")
+    .description("a cli tool for track expense")
+    .version("1.0.0");
+
+  
+
+  program.command("expense-tracker").addCommand(addCommand(callbackCmdExecuted));
+  program.exitOverride();
+
+  return program;
+}
+
+

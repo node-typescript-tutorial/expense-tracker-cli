@@ -4,12 +4,26 @@ export type Model<T> = {
 
 interface ModelProp {
   csv: CSVProp;
+  type: ModelType;
+  format?: string;
 }
 
 interface CSVProp {
   header: string;
-  type: ColType;
-  format?: string;
 }
 
-export type ColType = "number" | "string" | "date";
+export type ModelType = "number" | "string" | "date";
+
+type CSVMap<T> = {
+  [K in keyof Model<T>]: CSVProp;
+};
+
+export const getCSVProp = <T extends Object>(model: Model<T>): CSVMap<T> => {
+  const csvMap = {} as CSVMap<T>;
+  for (const key in model) {
+    if (model[key] && model[key].csv) {
+      csvMap[key] = model[key].csv;
+    }
+  }
+  return csvMap;
+};

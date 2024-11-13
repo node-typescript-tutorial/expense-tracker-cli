@@ -1,14 +1,11 @@
 import {
   createReadStream,
   createWriteStream,
-  Mode,
-  readFileSync,
-  ReadStream,
+  statSync,
 } from "fs";
 import { createInterface } from "readline";
 import { parseDate } from "./date";
-import { ColType, Model } from "./model";
-import { delimiter } from "path";
+import { Model, getCSVProp } from "./model";
 
 export function readCSV<T extends Object>(
   filePath: string,
@@ -58,7 +55,7 @@ export function readCSV<T extends Object>(
           const prop = headerPropMap[headers[i]].prop as keyof Model<T> &
             string;
           if (model[prop] && model[prop].csv) {
-            switch (model[prop].csv.type) {
+            switch (model[prop].type) {
               case "string":
                 rawData[prop] = row[i];
                 break;
@@ -82,28 +79,28 @@ export function readCSV<T extends Object>(
   });
 }
 
-export function exportCSV<T extends Object>(
+export function writeCSV<T extends Object>(
   filePath: string,
   data: T[],
   model: Model<T>,
-  delimeter: string = ","
+  delimiter: string = ","
 ) {
   const writeStream = createWriteStream(filePath);
 
-  // writes header for csv
-  const { headers } = getTypesAndHeaders(model);
-  writeStream.write(headers.join(delimeter));
+  // Write header for csv
+  const { headers } = getHeaders(model);
+  writeStream.write(headers.join(delimiter));
 
-  // write data to csv
+  // Write data to csv
   data.forEach((item) => {
     const vals: string[] = [];
 
     for (const key in item) {
-      const val = escapeCsvValue(`${item[key]}`);
+      const val = escapeCsvValue(`${item[key] ?? ""}`);
       vals.push(val);
     }
 
-    const line = vals.join(delimeter) + "\n";
+    const line = vals.join(delimiter) + "\n";
     writeStream.write(line);
   });
 
@@ -112,41 +109,58 @@ export function exportCSV<T extends Object>(
   });
 }
 
-//
-function getTypesAndHeaders<T extends Object>(model: Model<T>) {
+// Get headers from model
+function getHeaders<T extends Object>(
+  model: Model<T>,
+  isEscapeCsvValue: boolean = true
+) {
   const headers: string[] = [];
-  const colTypes: ColType[] = [];
   for (const key in model) {
     if (model[key] && model[key].csv) {
-      const { header, type } = model[key].csv;
-      headers.push(escapeCsvValue(header));
-      colTypes.push(type);
+      const { header } = model[key].csv;
+      const v = isEscapeCsvValue ? escapeCsvValue(header) : header;
+      headers.push(v);
     }
   }
-  return { headers, colTypes };
+  return { headers };
+}
+
+// check file CSV is blank
+function isFileBlank(filePath: string): boolean {
+  try {
+    const stats = statSync(filePath);
+    return stats.size === 0; // Check if file size is 0
+  } catch (err) {
+    console.error("Error reading file:", err);
+    return false; // Consider the file not blank if there's an error
+  }
 }
 
 // add new line in csv
-export function addLine<T extends Object>(
-  delimeter: string = ",",
+export async function addLine<T extends Object>(
+  delimiter: string = ",",
   obj: T,
   model: Model<T>,
   filePath: string
 ) {
   const vals: string[] = [];
-
-
-  for (const key in obj) {
-    if (model[key] && model[key].csv && model[key].csv.header) {
-      const val = escapeCsvValue(`${obj[key]}`);
-      vals.push(val);
-    }
-  }
-
-  const { headers, colTypes } = getTypesAndHeaders(model);
   const writeStream = createWriteStream(filePath);
 
-  const line = vals.join(delimeter) + "\n";
+  // check headers is existed in csv file
+  const { headers } = getHeaders(model);
+
+  if (isFileBlank(filePath)) {
+    // write headers
+    const line = headers.join(delimiter) + "\n";
+    writeStream.write(line);
+  }
+
+  for (const k in getCSVProp(model)) {
+    const val = escapeCsvValue(`${obj[k] ?? ""}`);
+    vals.push(val);
+  }
+
+  const line = vals.join(delimiter) + "\n";
   writeStream.write(line);
 
   writeStream.end(() => {
@@ -166,7 +180,7 @@ function escapeCsvValue(value: string): string {
 // Parse a line in csv to array of string field
 // example 1: `"something to, say","lorem in pulse",rock,`, to ['something to, say', 'lorem in pulse', 'rock']
 // example 2: """something"", to ""say""", "give me your "heart""", to ['"something" to, "say"', 'give me your "heart"' ]
-function parseCsvLine(line: string): string[] {
+function parseCsvLine(line: string, delimiter: string = ","): string[] {
   const result: string[] = [];
   let inQuotes = false; // flag to check we're inside a quoted field
   let currentField = "";
