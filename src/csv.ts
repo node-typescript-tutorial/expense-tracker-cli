@@ -2,19 +2,18 @@ import { createReadStream, createWriteStream, statSync } from "fs";
 import { createInterface } from "readline";
 import { parseDate } from "./date";
 import { Model } from "./model";
-import { rejects } from "assert";
-import { resolve } from "path";
 
 export interface ICSVRepository<T extends Object> {
   all(): Promise<T[]>;
-  load(props: { [key: string]: any }): Promise<T>;
+  load(props: Record<string, any>): Promise<T>;
   insertMany(data: T[]): Promise<number>;
   insert(obj: T): Promise<number>;
+  update(map: Record<string, any>, keyprops: Record<string, any>): Promise<number>;
 }
 
 export class CSVRepository<T extends Object> implements ICSVRepository<T> {
   // Primary keys in CSV Data
-  private pks: (keyof Model<T>)[] = [];
+  private pks: string[] = [];
 
   constructor(
     private model: Model<T>,
@@ -26,6 +25,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
     this.getHeaders = this.getHeaders.bind(this);
     this.isFileBlank = this.isFileBlank.bind(this);
     this.insert = this.insert.bind(this);
+    this.update = this.update.bind(this);
     this.escapeCsvValue = this.escapeCsvValue.bind(this);
     this.parseCsvLine = this.parseCsvLine.bind(this);
     this.getCSVProps = this.getCSVProps.bind(this);
@@ -103,7 +103,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
   }
 
   // Load item with primary key values
-  load(props: Partial<Model<T>>): Promise<T> {
+  load(props: Record<string, any>): Promise<T> {
     return new Promise((resolve, reject) => {
       // Looping all primary keys for validate
       for (const key of this.pks) {
@@ -123,7 +123,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
       let isHeader = true;
       const headers = this.getHeaders();
       headers.forEach((v, idx) => {
-        if (this.pks.includes(v as keyof T)) {
+        if (this.pks.includes(v)) {
         }
       });
 
@@ -207,9 +207,19 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
     });
   }
 
+  // Update 1 line in csv data
+  update(map: Record<string, any>, props: Record<string, any>): Promise<number> {
+    return new Promise((resolve, rejects) => {
+      for (const k of this.pks) {
+        if (props[k]) {
+          
+        }
+      }
+    });
+  }
   // get properties identified primary key
   private getPrimaryKeys() {
-    const keys: (keyof Model<T>)[] = [];
+    const keys: string[] = [];
     for (const prop in this.model) {
       if (this.model[prop] && this.model[prop].primaryKey == true) {
         keys.push(prop);

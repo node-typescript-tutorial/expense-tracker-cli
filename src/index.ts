@@ -6,19 +6,23 @@ import { parseCommandLine } from "./helper/parse";
 import { CSVRepository, ICSVRepository } from "./csv";
 import { ItemHandler } from "./item/handler";
 import { ItemClient } from "./item/service";
+import { SequenceRepository } from "./sequence/sequence_repository";
+import { SequenceModel } from "./sequence/sequence";
+import { SequenceClient, SequenceService } from "./sequence/sequence_service";
 
 interface Application {
   item: ItemHandler;
+  sequence: SequenceService;
 }
 
 const setUp = async () => {
   let csvData: Item[] = [];
-  const csvPath = "./data/items.csv";
-
+  const itemPath = "./data/items.csv";
+  const sequencePath = "./data/sequence.csv"
   // Item
   const itemRepository: ICSVRepository<Item> = new CSVRepository<Item>(
     itemModel,
-    csvPath,
+    itemPath,
     ","
   );
   const itemService = new ItemClient(itemRepository, () => {
@@ -26,8 +30,12 @@ const setUp = async () => {
   });
   const itemHandler = new ItemHandler(itemService, itemModel);
 
+  // sequence
+  const sequenceRepository = new SequenceRepository(SequenceModel, sequencePath)
+  const sequenceService = new SequenceClient(sequenceRepository)
   const app: Application = {
     item: itemHandler,
+    sequence: sequenceService,
   };
 
   const rl = createInterface({
@@ -64,7 +72,7 @@ const setUp = async () => {
     const { list, total } = await itemService.getAll();
     console.log(list);
   } catch (e) {
-    console.log(`error when read data from CSV file ${csvPath}: `, e);
+    console.log(`error when read data from CSV file ${itemPath}: `, e);
     throw e;
   }
 
