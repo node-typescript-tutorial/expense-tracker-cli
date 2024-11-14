@@ -1,3 +1,4 @@
+import { ICSVRepository } from "src/csv";
 import { Model } from "../model";
 
 export interface Item {
@@ -35,3 +36,17 @@ export const itemModel: Model<Item> = {
     type: "string",
   },
 };
+
+export interface SearchResult<T> {
+  list: T[];
+  total: number;
+}
+
+
+
+export interface IItemService {
+  create(description: string, amount: number): void;
+  getAll(): Promise<SearchResult<Item>>;
+}
+
+export interface IItemRepository extends ICSVRepository<Item>{}

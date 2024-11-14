@@ -6,6 +6,7 @@ interface ModelProp {
   csv: CSVProp;
   type: ModelType;
   format?: string;
+  primaryKey?: boolean;
 }
 
 interface CSVProp {

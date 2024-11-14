@@ -1,22 +1,27 @@
-import { CSVService } from "src/csv";
-import { Item } from "./item";
+import { IItemRepository, IItemService, Item, SearchResult } from "./item";
 
 export class ItemClient implements IItemService {
-  constructor(private csvService: CSVService<Item>) {
-    this.add = this.add.bind(this);
+  constructor(private csvService: IItemRepository, generateId: () => string) {
+    this.create = this.create.bind(this);
   }
 
-  add(description: string, amount: number) {
+  create(description: string, amount: number) {
     const item: Item = {
-        id: "1",
-        description: description,
-        amount: amount,
-        createdAt: new Date()
-    }
-    this.csvService.addLine(item);
+      id: "1",
+      description: description,
+      amount: amount,
+      createdAt: new Date(),
+    };
+    this.csvService.insert(item);
+  }
+
+  async getAll(): Promise<SearchResult<Item>> {
+    return this.csvService.all().then((result) => {
+      return {
+        list: result,
+        total: result.length,
+      };
+    });
   }
 }
 
-export interface IItemService {
-  add(description: string, amount: number): void;
-}

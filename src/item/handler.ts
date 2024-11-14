@@ -1,6 +1,5 @@
-import { Item } from "src/item/item";
+import { IItemService, Item } from "src/item/item";
 import { Model } from "src/model";
-import { IItemService } from "./service";
 
 export class ItemHandler {
   private service: IItemService;
@@ -31,7 +30,7 @@ export class ItemHandler {
       } else {
         console.log(`Description: ${description}`);
         console.log(`Amount: ${amount}`);
-        this.service.add(description, amount)
+        this.service.create(description, amount)
         // handle logic
 
         ///////////////////////

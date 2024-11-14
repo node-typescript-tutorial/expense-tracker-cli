@@ -3,33 +3,33 @@ import { Item, itemModel } from "./item/item";
 import { createInterface } from "readline";
 import { addCommand } from "./item/command";
 import { parseCommandLine } from "./helper/parse";
-import { CSVClient, CSVService } from "./csv";
+import { CSVRepository, ICSVRepository } from "./csv";
 import { ItemHandler } from "./item/handler";
 import { ItemClient } from "./item/service";
 
 interface Application {
   item: ItemHandler;
-  csvService: CSVService<Item>;
 }
 
 const setUp = async () => {
   let csvData: Item[] = [];
-  const csvPath = "./data/data.csv";
-  const csvService: CSVService<Item> = new CSVClient<Item>(
+  const csvPath = "./data/items.csv";
+
+  // Item
+  const itemRepository: ICSVRepository<Item> = new CSVRepository<Item>(
     itemModel,
     csvPath,
     ","
   );
-
-  // Item
-  const itemService = new ItemClient(csvService);
+  const itemService = new ItemClient(itemRepository, () => {
+    return "string";
+  });
   const itemHandler = new ItemHandler(itemService, itemModel);
 
   const app: Application = {
-    csvService: csvService,
     item: itemHandler,
   };
-  
+
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -61,8 +61,8 @@ const setUp = async () => {
   });
 
   try {
-    csvData = await csvService.readCSV();
-    console.log(csvData);
+    const { list, total } = await itemService.getAll();
+    console.log(list);
   } catch (e) {
     console.log(`error when read data from CSV file ${csvPath}: `, e);
     throw e;
@@ -91,6 +91,7 @@ function setUpCommand(
   program
     .command("expense-tracker")
     .addCommand(addCommand(app.item.add, callbackCmdExecuted));
+
   program.exitOverride();
 
   return program;
