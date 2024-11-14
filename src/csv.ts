@@ -1,14 +1,17 @@
 import { createReadStream, createWriteStream, statSync } from "fs";
 import { createInterface } from "readline";
 import { parseDate } from "./date";
-import { Model } from "./model";
+import { getCSVProp, Model } from "./model";
 
 export interface ICSVRepository<T extends Object> {
   all(): Promise<T[]>;
   load(props: Record<string, any>): Promise<T>;
   insertMany(data: T[]): Promise<number>;
   insert(obj: T): Promise<number>;
-  update(map: Record<string, any>, keyprops: Record<string, any>): Promise<number>;
+  update(
+    map: Record<string, any>,
+    keyprops: Record<string, any>
+  ): Promise<number>;
 }
 
 export class CSVRepository<T extends Object> implements ICSVRepository<T> {
@@ -77,6 +80,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
           for (let i = 0; i < headers.length; i++) {
             const prop = headerPropMap[headers[i]].prop as keyof Model<T> &
               string;
+            // Parse value from csv
             if (this.model[prop] && this.model[prop].csv) {
               switch (this.model[prop].type) {
                 case "string":
@@ -120,21 +124,71 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
         crlfDelay: Infinity,
       });
 
-      let isHeader = true;
-      const headers = this.getHeaders();
-      headers.forEach((v, idx) => {
-        if (this.pks.includes(v)) {
+      // Flat for header line
+      let isHeaderLine = true;
+
+      // Find object with key is property of Model<T> and value is indexes of this
+      const csvProps = this.getCSVProps();
+      let keyIdxes: Record<string, number> = {};
+      Object.keys(csvProps).forEach((k, idx) => {
+        if (this.model[k as keyof T] && this.model[k as keyof T]!.csv) {
+          keyIdxes[k] = idx;
         }
       });
 
       rl.on("line", (line: string) => {
         // handle row in csv
-        if (isHeader == true) {
-          isHeader = false;
-        } else {
-          const rawData: { [key: string]: any } = {};
+        let founded = true;
 
+        const rawData: { [key: string]: any } = {};
+
+        if (isHeaderLine) {
+          isHeaderLine = false;
+        } else {
           const row = line.split(this.delimiter);
+          for (const k in keyIdxes) {
+            // parse value
+            let v: any = row[keyIdxes[k]];
+            const k2 = k as keyof Model<T> & string;
+            switch (this.model[k2] && this.model[k2].type) {
+              case "string":
+                break;
+              case "number":
+                v = parseFloat(v);
+              case "date":
+                v = parseDate(v, "YYYY-MM-DD");
+              default:
+                break;
+            }
+
+            if (v !== props[k]) {
+              founded = false;
+              break;
+            } else {
+              continue;
+            }
+          }
+
+          if (founded) {
+            Object.keys(this.model).forEach((k, idx) => {
+              // parse value
+              let k2 = k as keyof Model<T>;
+              let v: any = row[idx];
+              switch (this.model[k2] && this.model[k2].type) {
+                case "string":
+                  break;
+                case "number":
+                  v = parseFloat(v);
+                case "date":
+                  v = parseDate(v, "YYYY-MM-DD");
+                default:
+                  break;
+              }
+              rawData[k] = v;
+            });
+            result = rawData as T
+            rl.emit("close");
+          }
         }
       });
 
@@ -208,11 +262,13 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
   }
 
   // Update 1 line in csv data
-  update(map: Record<string, any>, props: Record<string, any>): Promise<number> {
+  update(
+    map: Record<string, any>,
+    props: Record<string, any>
+  ): Promise<number> {
     return new Promise((resolve, rejects) => {
       for (const k of this.pks) {
         if (props[k]) {
-          
         }
       }
     });
