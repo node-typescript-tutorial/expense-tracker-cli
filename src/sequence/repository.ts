@@ -1,6 +1,6 @@
-import { CSVRepository, ICSVRepository } from "src/csv";
+import { Model } from "model";
+import { CSVRepository, ICSVRepository } from "../csv";
 import { Sequence } from "./sequence";
-import { Model } from "src/model";
 
 export interface ISequenceRepository extends ICSVRepository<Sequence> {
 }

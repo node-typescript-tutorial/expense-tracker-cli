@@ -1,14 +1,17 @@
-type DateFormat =
-  | "DD/MM/YYYY"
-  | "MM/DD/YY"
-  | "DD.MM.YYYY"
-  | "MM.DD.YYYY"
-  | "DD-MM-YYYY"
-  | "YYYY/MM/DD"
-  | "YYYY-MM-DD"
-  | "DD/MM/YY"
-  | "MM/DD/YY"
-  | "DD Mon, YYYY";
+const dateFormats = [
+  "DD/MM/YYYY",
+  "MM/DD/YY",
+  "DD.MM.YYYY",
+  "MM.DD.YYYY",
+  "DD-MM-YYYY",
+  "YYYY/MM/DD",
+  "YYYY-MM-DD",
+  "DD/MM/YY",
+  "MM/DD/YY",
+  "DD Mon, YYYY",
+] as const;
+
+type DateFormat = (typeof dateFormats)[number];
 
 type DateRegexs = {
   [key in DateFormat]: RegExp;
@@ -35,31 +38,31 @@ const monthAbbreviation: MonthAbbreviationMap = {
 
 export const dateRegexs: DateRegexs = {
   "YYYY-MM-DD": new RegExp(
-    "^(?<year>d{4})-(?<month>(0[1-9]|1[1-2]))-(?<date>(0[1-9]|1[0-9]|2[0-9]|3[01]))$"
+    "^(?<year>\\d{4})-(?<month>(0[1-9]|1[0-2]))-(?<date>(0[1-9]|1[0-9]|2[0-9]|3[01]))$"
   ),
   "DD/MM/YYYY": new RegExp(
-    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\/(?<month>(0[1-9]|1[1-2]))\\/(?<year>d{4})$"
+    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\/(?<month>(0[1-9]|1[0-2]))\\/(?<year>\\d{4})$"
   ),
   "DD.MM.YYYY": new RegExp(
-    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\.(?<month>(0[1-9]|1[1-2]))\\.(?<year>d{4})$"
+    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\.(?<month>(0[1-9]|1[0-2]))\\.(?<year>\\d{4})$"
   ),
   "DD-MM-YYYY": new RegExp(
-    "^(?<date>)(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(?<month>(0[1-9]|1[1-2]))"
+    "^(?<date>)(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(?<month>(0[1-9]|1[0-2]))"
   ),
   "MM/DD/YY": new RegExp(
-    "^(?<month>(0[1-9]|1[1-2]))\\/(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\/(?<year>d{2})$"
+    "^(?<month>(0[1-9]|1[0-2]))\\/(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\/(?<year>\\d{2})$"
   ),
   "MM.DD.YYYY": new RegExp(
-    "^(?<month>(0[1-9]|1[1-2]))\\.(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\.(?<year>d{4})$"
+    "^(?<month>(0[1-9]|1[0-2]))\\.(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\.(?<year>\\d{4})$"
   ),
   "YYYY/MM/DD": new RegExp(
-    "^(?<year>d{4})\\/(?<month>(0[1-9]|1[1-2]))\\/(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))$"
+    "^(?<year>\\d{4})\\/(?<month>(0[1-9]|1[0-2]))\\/(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))$"
   ),
   "DD/MM/YY": new RegExp(
-    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\/(?<month>(0[1-9]|1[1-2]))\\/(?<year>d{2})$"
+    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\/(?<month>(0[1-9]|1[0-2]))\\/(?<year>\\d{2})$"
   ),
   "DD Mon, YYYY": new RegExp(
-    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\s(?<month>(Feb|Jan|Mar|Apr|May|June|July|Aug|Sept|Oct|Nov|Dec))[,]\\s(?<year>d{4})$"
+    "^(?<date>(0[1-9]|1[0-9]|2[0-9]|3[0-1]))\\s(?<month>(Feb|Jan|Mar|Apr|May|June|July|Aug|Sept|Oct|Nov|Dec))[,]\\s(?<year>\\d{4})$"
   ),
 };
 
@@ -69,11 +72,19 @@ type RegexDateGroup = {
   year: string;
 };
 
-export const parseDate = (str: string, format: DateFormat) => {
-  switch (format) {
+// Enter a string with format date of this string and return a date
+// Example: string '20-04-2020' with format  "dd-mm-yyyy" => Date(2020,3,20)
+export const parseDate = (str: string, format: string = "DD/MM/YYYY") => {
+  // check is valid format, if not return null
+  const validFormat = dateFormats.find((validFormat) => validFormat === format);
+  if (validFormat === undefined) {
+    return null;
+  }
+
+  let dateGroup: Partial<RegexDateGroup> | undefined =
+    dateRegexs[validFormat].exec(str)?.groups;
+  switch (validFormat) {
     case "DD Mon, YYYY":
-      let dateGroup: Partial<RegexDateGroup> | undefined =
-        dateRegexs[format].exec(str)?.groups;
       if (!dateGroup || !dateGroup.year || !dateGroup.date || !dateGroup.month)
         return null;
       return new Date(
@@ -82,7 +93,8 @@ export const parseDate = (str: string, format: DateFormat) => {
         parseFloat(dateGroup.date)
       );
     default:
-      dateGroup = dateRegexs[format].exec(str)?.groups;
+      dateGroup = dateRegexs[validFormat].exec(str)?.groups;
+
       if (!dateGroup || !dateGroup.year || !dateGroup.date || !dateGroup.month)
         return null;
       return new Date(
@@ -93,14 +105,20 @@ export const parseDate = (str: string, format: DateFormat) => {
   }
 };
 
-export const formatDate = (date: Date, formatType: DateFormat): string => {
+// If formatType is not valid/covered => ""
+export const formatDate = (date: Date, formatType: string): string => {
+  // Check is valid format, if not return null
+  const validFormat = dateFormats.find((validFormat) => validFormat === formatType);
+  if (!validFormat) {
+    return "";
+  }
   const day = date.getDate();
   const month = date.getMonth();
   const year = date.getFullYear();
-  formatType
+  const dateString = formatType
     .replace("YYYY", `${year}`)
     .replace("YY", `${year}`.padEnd(2, "0"))
     .replace("MM", `${month}`.padStart(2, "0"))
     .replace("DD", `${day}`.padStart(2, "0"));
-  return formatType;
+  return dateString;
 };

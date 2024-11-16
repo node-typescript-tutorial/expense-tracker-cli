@@ -1,4 +1,4 @@
-import { Model } from "src/model";
+import { Model } from "model";
 
 export interface Sequence {
   name: string;

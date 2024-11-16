@@ -1,4 +1,4 @@
-import { CSVRepository } from "src/csv";
+import { CSVRepository } from "../csv";
 import { IItemRepository, Item } from "./item";
 
 export class ItemRepository

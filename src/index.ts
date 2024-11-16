@@ -1,14 +1,14 @@
 import { Command } from "commander";
 import { Item, itemModel } from "./item/item";
 import { createInterface } from "readline";
-import { addCommand } from "./item/command";
+import { addCommand, deleteCommand, loadCommand } from "./item/command";
 import { parseCommandLine } from "./helper/parse";
 import { CSVRepository, ICSVRepository } from "./csv";
 import { ItemHandler } from "./item/handler";
 import { ItemClient } from "./item/service";
-import { SequenceRepository } from "./sequence/sequence_repository";
+import { SequenceRepository } from "./sequence/repository";
 import { SequenceModel } from "./sequence/sequence";
-import { SequenceClient, SequenceService } from "./sequence/sequence_service";
+import { SequenceClient, SequenceService } from "./sequence/service";
 
 interface Application {
   item: ItemHandler;
@@ -16,23 +16,33 @@ interface Application {
 }
 
 const setUp = async () => {
-  let csvData: Item[] = [];
   const itemPath = "./data/items.csv";
-  const sequencePath = "./data/sequence.csv"
+  const sequencePath = "./data/sequence.csv";
+
+  // Sequence
+  const sequenceRepository = new SequenceRepository(
+    SequenceModel,
+    sequencePath
+  );
+  const sequenceService = new SequenceClient(sequenceRepository);
+
   // Item
   const itemRepository: ICSVRepository<Item> = new CSVRepository<Item>(
     itemModel,
     itemPath,
     ","
   );
-  const itemService = new ItemClient(itemRepository, () => {
-    return "string";
+  const itemService = new ItemClient(itemRepository, async () => {
+    try {
+      const sequenceNo = await sequenceService.next("item");
+
+      return sequenceNo + "";
+    } catch (error) {
+      throw error;
+    }
   });
   const itemHandler = new ItemHandler(itemService, itemModel);
 
-  // sequence
-  const sequenceRepository = new SequenceRepository(SequenceModel, sequencePath)
-  const sequenceService = new SequenceClient(sequenceRepository)
   const app: Application = {
     item: itemHandler,
     sequence: sequenceService,
@@ -69,7 +79,7 @@ const setUp = async () => {
   });
 
   try {
-    const { list, total } = await itemService.getAll();
+    const { list } = await itemService.all();
     console.log(list);
   } catch (e) {
     console.log(`error when read data from CSV file ${itemPath}: `, e);
@@ -98,7 +108,9 @@ function setUpCommand(
 
   program
     .command("expense-tracker")
-    .addCommand(addCommand(app.item.add, callbackCmdExecuted));
+    .addCommand(addCommand(app.item.add, callbackCmdExecuted))
+    .addCommand(loadCommand(app.item.load, callbackCmdExecuted))
+    .addCommand(deleteCommand(app.item.delete, callbackCmdExecuted));
 
   program.exitOverride();
 

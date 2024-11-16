@@ -1,4 +1,4 @@
-import { ICSVRepository } from "src/csv";
+import { ICSVRepository } from "../csv";
 import { Model } from "../model";
 
 export interface Item {
@@ -10,6 +10,7 @@ export interface Item {
 
 export const itemModel: Model<Item> = {
   id: {
+    primaryKey: true,
     csv: {
       header: "ID",
     },
@@ -42,11 +43,11 @@ export interface SearchResult<T> {
   total: number;
 }
 
-
-
 export interface IItemService {
-  create(description: string, amount: number): void;
-  getAll(): Promise<SearchResult<Item>>;
+  insert(description: string, amount: number): Promise<number>;
+  all(): Promise<SearchResult<Item>>;
+  load(id: string): Promise<Item | null>;
+  delete(id: string): Promise<number>;
 }
 
-export interface IItemRepository extends ICSVRepository<Item>{}
+export interface IItemRepository extends ICSVRepository<Item> {}
