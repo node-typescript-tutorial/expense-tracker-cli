@@ -11,6 +11,8 @@ const dateFormats = [
   "DD Mon, YYYY",
 ] as const;
 
+
+
 type DateFormat = (typeof dateFormats)[number];
 
 type DateRegexs = {
@@ -108,7 +110,9 @@ export const parseDate = (str: string, format: string = "DD/MM/YYYY") => {
 // If formatType is not valid/covered => ""
 export const formatDate = (date: Date, formatType: string): string => {
   // Check is valid format, if not return null
-  const validFormat = dateFormats.find((validFormat) => validFormat === formatType);
+  const validFormat = dateFormats.find(
+    (validFormat) => validFormat === formatType
+  );
   if (!validFormat) {
     return "";
   }

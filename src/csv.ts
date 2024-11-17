@@ -57,7 +57,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
 
   // Load all data in CSV
   all(): Promise<T[]> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const result: T[] = [];
       let headers: string[] = [];
 
@@ -76,9 +76,10 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
 
       const rl = this.createReadLineInterface();
 
-      rl.on("line", (line: string) => {
+      for await (const line of rl) {
         if (headers.length == 0) {
           // Handle header row in CSV
+
           this.parseCsvLine(line).forEach((cell) => {
             if (!headerPropMap[cell]) {
               return reject(`header ${cell} isn't existed`);
@@ -94,6 +95,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
           for (let i = 0; i < headers.length; i++) {
             const prop = headerPropMap[headers[i]].prop as keyof Model<T> &
               string;
+
             // Parse value from csv
             if (this.model[prop] && this.model[prop].csv) {
               switch (this.model[prop].type) {
@@ -102,9 +104,10 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
                   break;
                 case "number":
                   rawData[prop] = parseFloat(row[i]);
+                  break;
                 case "date":
                   rawData[prop] = parseDate(row[i], this.model[prop]?.format);
-
+                  break;
                 default:
                   break;
               }
@@ -112,12 +115,11 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
           }
           result.push(rawData as T);
         }
-      });
+      }
 
-      rl.on("close", () => {
-        console.log("Finished reading the file.");
-        resolve(result);
-      });
+      console.log("Finished reading the file.");
+
+      resolve(result);
     });
   }
 
@@ -183,6 +185,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
               // parse value
               let k2 = k as keyof Model<T>;
               let v: any = row[idx];
+
               switch (this.model[k2] && this.model[k2].type) {
                 case "string":
                   break;
@@ -596,6 +599,7 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
 
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
+
       if (char === '"' && !inQuotes) {
         inQuotes = true;
       } else if (char === '"' && inQuotes) {
@@ -610,6 +614,9 @@ export class CSVRepository<T extends Object> implements ICSVRepository<T> {
         currentField = "";
       } else {
         currentField += char;
+        if (i == line.length - 1) {
+          result.push(currentField);
+        }
       }
     }
 

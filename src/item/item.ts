@@ -34,7 +34,7 @@ export const itemModel: Model<Item> = {
     csv: {
       header: "Amount",
     },
-    type: "string",
+    type: "number",
   },
 };
 

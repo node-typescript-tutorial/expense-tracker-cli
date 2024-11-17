@@ -1,7 +1,13 @@
 import { Command } from "commander";
 import { Item, itemModel } from "./item/item";
 import { createInterface } from "readline";
-import { addCommand, deleteCommand, loadCommand } from "./item/command";
+import {
+  addCommand,
+  deleteCommand,
+  listCommand,
+  loadCommand,
+  summaryCommand,
+} from "./item/command";
 import { parseCommandLine } from "./helper/parse";
 import { CSVRepository, ICSVRepository } from "./csv";
 import { ItemHandler } from "./item/handler";
@@ -110,8 +116,9 @@ function setUpCommand(
     .command("expense-tracker")
     .addCommand(addCommand(app.item.add, callbackCmdExecuted))
     .addCommand(loadCommand(app.item.load, callbackCmdExecuted))
-    .addCommand(deleteCommand(app.item.delete, callbackCmdExecuted));
-
+    .addCommand(deleteCommand(app.item.delete, callbackCmdExecuted))
+    .addCommand(listCommand(app.item.search, callbackCmdExecuted))
+    .addCommand(summaryCommand(app.item.summary, callbackCmdExecuted));
   program.exitOverride();
 
   return program;

@@ -28,16 +28,40 @@ export const loadCommand = (
       callbackCmdExecuted && callbackCmdExecuted();
     });
 
-    export const deleteCommand = (
+export const deleteCommand = (
+  handler: (opts: any, command: any) => void,
+  callbackCmdExecuted: (() => void) | undefined
+) =>
+  new Command("delete")
+    .enablePositionalOptions()
+    .option("--id <id>")
+    .description("load id")
+    .action(handler)
+    .hook("postAction", () => {
+      callbackCmdExecuted && callbackCmdExecuted();
+    });
+
+export const listCommand = (
+  handler: (opts: any, command: any) => void,
+  callbackCmdExecuted: (() => void) | undefined
+) =>
+  new Command("list")
+    .enablePositionalOptions()
+    .description("show all expenses")
+    .action(handler)
+    .hook("postAction", () => {
+      callbackCmdExecuted && callbackCmdExecuted();
+    });
+
+    export const summaryCommand = (
       handler: (opts: any, command: any) => void,
       callbackCmdExecuted: (() => void) | undefined
     ) =>
-      new Command("delete")
+      new Command("summary")
         .enablePositionalOptions()
-        .option("--id <id>")
-        .description("load id")
+        .option("--month <month>")
+        .description("show total expenses")
         .action(handler)
         .hook("postAction", () => {
           callbackCmdExecuted && callbackCmdExecuted();
         });
-    
